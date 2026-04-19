@@ -4,6 +4,9 @@
   "description": "Native Semantic Bridge for oh-my-pi and Serena MCP",
   "main": "src/index.ts",
   "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0"
   },
