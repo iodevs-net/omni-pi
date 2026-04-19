@@ -17,16 +17,21 @@ export async function handleToolCall(
   if (!targetPath) return;
 
   try {
-    ctx.ui.notify(`[Bridge] Iniciando Análisis de Impacto Profundo...`);
+    ctx.ui.notify(`[Bridge] Validando impacto en: ${targetPath}`);
     
-    // 1. Obtener símbolos locales para identificar qué se está tocando
     const overview = await provider.getSymbolsOverview(targetPath);
+    
+    // Audit Fix #7: Regex mejorada para capturar símbolos en TypeScript/JavaScript moderno.
     const symbols = overview.split("\n")
-      .filter(l => l.includes("export") || l.includes("class") || l.includes("interface"))
-      .map(l => l.match(/(?:export\s+)?(?:class|interface|function|const)\s+([a-zA-Z0-9_]+)/)?.[1])
+      .map(l => {
+        const specific = l.match(
+          /(?:export\s+)?(?:async\s+)?(?:default\s+)?(?:abstract\s+)?(?:class|interface|function|const|type|enum)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/
+        )?.[1];
+        if (specific) return specific;
+        return l.match(/\b([A-Z][a-zA-Z0-9_]+)\b/)?.[1];
+      })
       .filter(Boolean) as string[];
 
-    // 2. Rastrear impacto en archivos externos (limitado a los top 3 para performance)
     const impactMap: Record<string, string[]> = {};
     for (const symbol of symbols.slice(0, 3)) {
       const refs = await provider.getIncomingReferences(symbol, targetPath);
@@ -35,7 +40,6 @@ export async function handleToolCall(
       }
     }
 
-    // 3. Generar reporte de impacto
     const impactSymbols = Object.keys(impactMap);
     if (impactSymbols.length > 0) {
       ctx.ui.notify("⚠️ ¡ALERTA DE IMPACTO DETECTADA!");
@@ -46,16 +50,16 @@ export async function handleToolCall(
       }
       impactMessage += `\nVerifica que no estás rompiendo contratos públicos antes de proceder.`;
 
+      // Audit Fix #8: Renombrar 'message' -> 'reason' para compatibilidad con oh-my-pi core.
       return {
         block: false, 
-        message: impactMessage
+        reason: impactMessage
       };
     } else {
-      // Fallback al aviso semántico estándar si no hay referencias externas claras
       const compressed = SemanticCompressor.compress(overview);
       return {
         block: false,
-        message: `[BRIDGE_ADVISORY] Estructura de archivo detectada:\n${compressed}`
+        reason: `[BRIDGE_ADVISORY] Estructura de archivo detectada:\n${compressed}`
       };
     }
   } catch (error) {

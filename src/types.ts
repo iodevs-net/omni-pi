@@ -16,8 +16,16 @@ export interface SessionStartEvent {
   type: "session_start";
 }
 
+export interface SessionShutdownEvent {
+  type: "session_shutdown";
+}
+
 export interface ContextEvent {
   type: "context";
+  messages: any[];
+}
+
+export interface ContextEventResult {
   messages: any[];
 }
 
@@ -28,18 +36,22 @@ export interface ToolCallEvent {
   input: Record<string, any>;
 }
 
+export interface CallToolResult {
+  content: any[];
+  isError?: boolean;
+}
+
 /**
  * Respuesta de validación para hooks que pueden bloquear o modificar.
  */
 export interface HookResponse {
   block?: boolean;
-  message?: string;
+  reason?: string;
   modifiedMessages?: any[];
 }
 
 /**
  * Interface agnóstica para proveedores de análisis semántico.
- * Permite cambiar Serena por LSP u otras herramientas en el futuro.
  */
 export interface ISemanticProvider {
   connect(): Promise<boolean>;
