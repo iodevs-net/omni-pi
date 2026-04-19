@@ -19,19 +19,18 @@ export async function handleToolCall(
   if (!targetPath) return;
 
   try {
-    console.log(`[Bridge] Validando edición en: ${targetPath}`);
+    ctx.ui.notify(`[Bridge] Validando edición en: ${targetPath}`);
     
     // Consultamos a Serena por dependencias externas del archivo
     const overview = await serena.getSymbolsOverview(targetPath);
     
     // Si Serena devuelve símbolos con muchas referencias, avisar al LLM
-    // (Por ahora implementamos un aviso preventivo, el bloqueo total requiere lógica más compleja)
     const compressed = SemanticCompressor.compress(overview);
     
     if (compressed.includes("- ")) {
-      console.log("[Bridge] Detectados símbolos críticos. Inyectando advertencia.");
+      ctx.ui.notify("[Bridge] Detectados símbolos críticos. Inyectando advertencia.");
       return {
-        block: false, // No bloqueamos por defecto para no romper el flujo, pero advertimos
+        block: false, 
         message: `[BRIDGE_WARNING] Estás editando un archivo con dependencias activas:\n${compressed}\nAsegúrate de que tus cambios sean compatibles.`
       };
     }

@@ -24,9 +24,9 @@ export async function handleContext(
 
   if (hasIntent) {
     try {
-      console.log("[Bridge] Detectada intención semántica. Consultando Serena...");
+      ctx.ui.notify("[Bridge] Detectada intención semántica. Consultando Serena...");
       
-      // Intentamos obtener un resumen del directorio actual (LEAN: profundidad 1)
+      // Intentamos obtener un resumen del directorio actual
       const symbols = await serena.getSymbolsOverview(".");
       const compressed = SemanticCompressor.compress(symbols);
 
@@ -36,7 +36,7 @@ export async function handleContext(
         content: `[SEMANTIC_ADVISORY]\n${compressed}\nUtiliza esta información para evitar romper dependencias.`
       });
       
-      console.log("[Bridge] Contexto inyectado con éxito.");
+      ctx.ui.notify("[Bridge] Contexto semántico inyectado con éxito.");
     } catch (error) {
       console.warn("[Bridge] No se pudo inyectar contexto semántico:", error);
     }

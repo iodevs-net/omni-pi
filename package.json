@@ -13,5 +13,10 @@
   "devDependencies": {
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0"
+  },
+  "omp": {
+    "extensions": [
+      "src/index.ts"
+    ]
   }
 }
