@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@oh-my-pi/pi-coding-agent": ["../../repos/terminales/oh-my-pi/packages/coding-agent/src/index.ts"],
+      "@oh-my-pi/pi-coding-agent/*": ["../../repos/terminales/oh-my-pi/packages/coding-agent/src/*.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}
