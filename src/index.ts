@@ -5,7 +5,7 @@ import { handleToolCall } from "./hooks/tool-call.js";
 import { handleSessionShutdown } from "./hooks/session-shutdown.js";
 
 /**
- * Pi-Serena Semantic Bridge
+ * Omni-Pi (Universal Semantic Intelligence)
  * HookFactory — contrato requerido por el sistema de extensiones de oh-my-pi.
  * 
  * Audit Fix #1: El export default DEBE ser una función que recibe la API,

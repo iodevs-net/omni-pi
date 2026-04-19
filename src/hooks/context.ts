@@ -54,7 +54,7 @@ ${compressed}
       };
       
     } catch (error) {
-      console.warn("[Bridge] Salto de inyección semántica:", error);
+      console.warn("[Omni-Pi] Salto de inyección semántica:", error);
     }
   }
 }

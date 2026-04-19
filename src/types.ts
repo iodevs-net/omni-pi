@@ -1,6 +1,6 @@
 /**
  * MASTER-SPEC-PROTOCOL: Layer C - Hook Interceptors Types
- * Contrato de tipos para oh-my-pi bridge.
+ * Contrato de tipos para Omni-Pi.
  */
 
 export interface ExtensionContext {
