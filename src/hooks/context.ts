@@ -1,35 +1,44 @@
-import type { ContextEvent, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { SerenaClient } from "../serena/client.ts";
-import { compressSerenaResponse } from "../compressor.ts";
+import { ContextEvent, ExtensionContext } from "../types.ts";
+import { SemanticCompressor } from "../compressor.ts";
 
+/**
+ * Hook: context
+ * Inyecta pistas semánticas dinámicamente si detecta intención de cambio.
+ */
 export async function handleContext(
   event: ContextEvent,
   ctx: ExtensionContext,
   serena: SerenaClient
 ) {
-  // Check if the last user message implies an edit
   const lastMessage = event.messages[event.messages.length - 1];
-  if (lastMessage?.role !== "user") return undefined;
+  if (!lastMessage || lastMessage.role !== "user") return;
 
-  const content = lastMessage.content;
-  if (typeof content !== "string") return undefined;
+  const content = typeof lastMessage.content === "string" 
+    ? lastMessage.content 
+    : JSON.stringify(lastMessage.content);
 
-  // Simple heuristic: if user says "refactor" or "edit" or "change"
-  const keywords = ["refactor", "edit", "change", "fix", "modify"];
-  if (!keywords.some(k => content.toLowerCase().includes(k))) return undefined;
+  // Regla LEAN: Solo inyectar si hay palabras clave de acción
+  const intentKeywords = ["refactor", "change", "fix", "use", "implement", "mover", "borrar"];
+  const hasIntent = intentKeywords.some(kw => content.toLowerCase().includes(kw));
 
-  // Try to find symbols related to the prompt (simplified)
-  // In a real implementation, we would extract symbol names from the prompt
-  
-  // For now, let's just return a placeholder to prove injection works
-  return {
-    messages: [
-      ...event.messages,
-      {
+  if (hasIntent) {
+    try {
+      console.log("[Bridge] Detectada intención semántica. Consultando Serena...");
+      
+      // Intentamos obtener un resumen del directorio actual (LEAN: profundidad 1)
+      const symbols = await serena.getSymbolsOverview(".");
+      const compressed = SemanticCompressor.compress(symbols);
+
+      // Inyectar como mensaje de sistema invisible para el usuario pero visible para el LLM
+      event.messages.unshift({
         role: "system",
-        content: "💡 [Serena] Semantic context active. I will validate your edits against the project graph.",
-        timestamp: Date.now()
-      }
-    ]
-  };
+        content: `[SEMANTIC_ADVISORY]\n${compressed}\nUtiliza esta información para evitar romper dependencias.`
+      });
+      
+      console.log("[Bridge] Contexto inyectado con éxito.");
+    } catch (error) {
+      console.warn("[Bridge] No se pudo inyectar contexto semántico:", error);
+    }
+  }
 }
