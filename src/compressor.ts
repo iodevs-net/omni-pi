@@ -15,12 +15,10 @@ export class SemanticCompressor {
       .filter(line => line.length > 0 && !line.startsWith("//") && !line.startsWith("/*") && !line.startsWith("*"));
 
     // 2. Clasificación por Relevancia Estructural
-    // Priorizamos exportaciones, clases, interfaces y funciones públicas.
     const structuralLines: string[] = [];
     const implementationLines: string[] = [];
 
     for (const line of lines) {
-      // Priorizamos exportaciones, clases, interfaces, tipos y jerarquías (Audit 2026 Micro-fix)
       const isStructural = /export|class|interface|enum|type|public|private|protected|abstract|extends|implements/.test(line);
       if (isStructural) {
         structuralLines.push(line);
@@ -30,29 +28,32 @@ export class SemanticCompressor {
     }
 
     // 3. Ensamblaje con Prioridad
-    // Primero inyectamos toda la estructura, luego los detalles hasta agotar el cupo.
     let result = "--- Project Structure ---\n";
-    let currentCharCount = 0;
+    let currentCharCount = result.length;
+    let addedCount = 0;
 
     // Añadir líneas estructurales primero
     for (const line of structuralLines) {
       if (currentCharCount + line.length > this.MAX_CHARS) break;
       result += `- ${line}\n`;
       currentCharCount += line.length + 3;
+      addedCount++;
     }
 
     // Añadir líneas de implementación si queda espacio
-    if (currentCharCount < this.MAX_CHARS) {
+    if (currentCharCount < this.MAX_CHARS && implementationLines.length > 0) {
       result += "\n--- Implementation Details ---\n";
+      currentCharCount += 28;
       for (const line of implementationLines) {
         if (currentCharCount + line.length > this.MAX_CHARS) break;
         result += `- ${line}\n`;
         currentCharCount += line.length + 3;
+        addedCount++;
       }
     }
 
-    // 4. Indicador de Truncamiento
-    if (lines.length > (structuralLines.length + implementationLines.length)) {
+    // 4. Indicador de Truncamiento REAL
+    if (addedCount < lines.length) {
       result += "\n[Note: Some minor details were omitted for brevity]";
     }
 

@@ -107,6 +107,42 @@ export class SerenaClient implements ISemanticProvider {
   }
 
   /**
+   * Identifica qué otros archivos consumen símbolos de este archivo.
+   * Proporciona trazabilidad de impacto profundo (Deep Impact Analysis).
+   */
+  public async getIncomingReferences(symbolName: string, path: string): Promise<string[]> {
+    if (!this.isConnected) return [];
+
+    try {
+      const response = await this.client.callTool({
+        name: "find_referencing_symbols",
+        arguments: {
+          symbol: symbolName,
+          path: path
+        }
+      });
+
+      if (!response || !response.content) return [];
+
+      const refs = (response.content as any[])
+        .filter((c: any) => c.type === "text")
+        .map((c: any) => c.text)
+        .join("\n");
+
+      // Extraer nombres de archivos únicos usando una regex simple pero efectiva
+      const files = [...new Set(refs.match(/[a-zA-Z0-9._/-]+\.(ts|js|py|go|rs)/g) || [])] as string[];
+      
+      // Filtrar el archivo origen para mostrar solo el impacto externo
+      const currentFile = path.split("/").pop() || path;
+      return files.filter(f => !f.includes(currentFile));
+      
+    } catch (e) {
+      console.warn(`[Serena] Error buscando referencias para ${symbolName}:`, e);
+      return [];
+    }
+  }
+
+  /**
    * Returns current health status.
    */
   public getHealth() {
