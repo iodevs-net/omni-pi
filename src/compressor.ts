@@ -1,58 +1,60 @@
 /**
- * Layer B: Semantic Compressor
- * Transforma la salida detallada de Serena en un formato denso para el prompt del LLM.
- * Respeta el límite de ~500 tokens (estimado en caracteres).
+ * Layer B: Semantic Compressor (Elite Version)
+ * Procesa y comprime la data de Serena para maximizar el valor por token.
+ * (Addressing OMP Audit Suggestion - Smart Prioritization)
  */
 export class SemanticCompressor {
-  private static readonly MAX_CHARS = 2000; // Aprox 500 tokens
+  private static readonly MAX_CHARS = 2500; // ~500-600 tokens
 
-  /**
-   * Comprime la respuesta de herramientas como find_referencing_symbols o get_symbols_overview.
-   */
-  static compress(response: any): string {
-    if (!response || !response.content || response.content.length === 0) {
-      return "[SEMANTIC] No symbols found.";
-    }
+  public static compress(rawSymbols: string): string {
+    if (!rawSymbols) return "No symbols detected.";
 
-    try {
-      const text = response.content[0].text;
-      
-      // Si el texto es error, reportarlo directamente pero breve
-      if (text.startsWith("Error executing tool")) {
-        return `[SEMANTIC_ERR] ${text.substring(0, 100)}...`;
-      }
+    // 1. Limpieza de ruido (Comentarios y líneas vacías)
+    const lines = rawSymbols.split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && !line.startsWith("//") && !line.startsWith("/*") && !line.startsWith("*"));
 
-      // Intentar parsear si es JSON, sino usar el texto directamente
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = text;
-      }
+    // 2. Clasificación por Relevancia Estructural
+    // Priorizamos exportaciones, clases, interfaces y funciones públicas.
+    const structuralLines: string[] = [];
+    const implementationLines: string[] = [];
 
-      let output = "SEMANTIC_CONTEXT:\n";
-
-      if (typeof data === "string") {
-        output += data.substring(0, this.MAX_CHARS);
-      } else if (Array.isArray(data)) {
-        // Para listas de símbolos
-        data.forEach((sym: any) => {
-          const line = `  - ${sym.name} (${sym.kind}) @ ${sym.relative_path}:${sym.line}\n`;
-          if (output.length + line.length < this.MAX_CHARS) {
-            output += line;
-          }
-        });
-      } else if (data.structuredContent) {
-        // Manejo de structuredContent si existe
-        output += JSON.stringify(data.structuredContent).substring(0, this.MAX_CHARS);
+    for (const line of lines) {
+      const isStructural = /export|class|interface|enum|type|public|abstract/.test(line);
+      if (isStructural) {
+        structuralLines.push(line);
       } else {
-        // Fallback genérico comprimido
-        output += JSON.stringify(data).substring(0, this.MAX_CHARS);
+        implementationLines.push(line);
       }
-
-      return output.trim();
-    } catch (error) {
-      return "[SEMANTIC_ERR] Compression failed.";
     }
+
+    // 3. Ensamblaje con Prioridad
+    // Primero inyectamos toda la estructura, luego los detalles hasta agotar el cupo.
+    let result = "--- Project Structure ---\n";
+    let currentCharCount = 0;
+
+    // Añadir líneas estructurales primero
+    for (const line of structuralLines) {
+      if (currentCharCount + line.length > this.MAX_CHARS) break;
+      result += `- ${line}\n`;
+      currentCharCount += line.length + 3;
+    }
+
+    // Añadir líneas de implementación si queda espacio
+    if (currentCharCount < this.MAX_CHARS) {
+      result += "\n--- Implementation Details ---\n";
+      for (const line of implementationLines) {
+        if (currentCharCount + line.length > this.MAX_CHARS) break;
+        result += `- ${line}\n`;
+        currentCharCount += line.length + 3;
+      }
+    }
+
+    // 4. Indicador de Truncamiento
+    if (lines.length > (structuralLines.length + implementationLines.length)) {
+      result += "\n[Note: Some minor details were omitted for brevity]";
+    }
+
+    return result;
   }
 }
