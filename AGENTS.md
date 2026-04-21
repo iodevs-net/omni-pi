@@ -23,6 +23,7 @@ Data flow:
   - `hooks/` - Native OMP hook implementations
   - `types.ts` - Universal interfaces
   - `compressor.ts` - Semantic data compression logic
+- `tests/` - Test files located alongside source files
 
 ## Development Commands
 - `bun install` - Install dependencies

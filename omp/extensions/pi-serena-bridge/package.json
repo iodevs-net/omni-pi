@@ -1,0 +1,22 @@
+{
+  "name": "pi-serena-bridge",
+  "version": "1.0.0",
+  "description": "Native Semantic Bridge for oh-my-pi and Serena MCP",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "omp": {
+    "extensions": [
+      "src/index.ts"
+    ]
+  }
+}
