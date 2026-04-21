@@ -57,6 +57,6 @@ export interface ISemanticProvider {
   connect(): Promise<boolean>;
   disconnect(): Promise<void>;
   getSymbolsOverview(path: string, timeoutMs?: number): Promise<string>;
-  getIncomingReferences(symbolName: string, path: string): Promise<string[]>;
+  getIncomingReferences(symbolName: string, path: string, timeoutMs?: number): Promise<string[]>;
   getHealth(): { connected: boolean; error: string | null; cacheEntries: number };
 }

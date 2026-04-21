@@ -21,27 +21,36 @@ export async function handleContext(
 
   const content = rawContent.toLowerCase();
 
+  // Palabras clave de intención mejoradas
   const intents = [
     "refactor", "cambiar", "change", "fix", "arreglar", "use", "usar", 
     "implement", "implementar", "mover", "move", "borrar", "delete", 
     "update", "actualizar", "modify", "modificar", "optimizar", "optimize",
-    "analiza", "resumen", "explica", "qué hace", "contexto"
+    "analiza", "resumen", "explica", "qué hace", "contexto", "revisar", "cómo", "por qué"
   ];
   
   const hasIntent = intents.some(intent => content.includes(intent));
 
   if (hasIntent) {
     try {
-      // Audit Fix #6: Intentar extraer un path de archivo del mensaje del usuario para mayor precisión.
-      const pathMatch = rawContent.match(/['"`]([^'"`]+\.(ts|js|tsx|jsx|py|go|rs|java|cs))[`'"]/);
+      // Extraer path con soporte para rutas complejas y espacios
+      const pathMatch = rawContent.match(/(?:ruta|path|file|archivo|location)\s*[:=]\s*['"`]?([^'"`\s;.,!?]+(?:\.[a-zA-Z0-9]+)*)/i) ||
+                        rawContent.match(/['"`]([^'"`]+\.(ts|js|tsx|jsx|py|go|rs|java|cs))['"`]/);
       const targetPath = pathMatch?.[1] || ".";
 
       ctx.ui.notify(`[Omni-Pi] Analizando semántica de: ${targetPath}`);
-      
-      const symbols = await provider.getSymbolsOverview(targetPath);
-      if (!symbols || symbols.length < 10) return;
 
-      const compressed = SemanticCompressor.compress(symbols);
+      // Calcular límite de caracteres para símbolos (reservando espacio para encabezado)
+      const maxChars = SemanticCompressor.MAX_CHARS - "[OMNI_PI_ADVISORY] Estructura de archivo detectada:\n".length;
+
+      const symbolsString = await Promise.race([
+        provider.getSymbolsOverview(targetPath, 3000),
+        new Promise<string>((_, reject) => setTimeout(() => reject(new Error('Symbols timeout')), 3000))
+      ]);
+
+      if (!symbolsString || symbolsString.length < 5) return;
+
+      const compressed = SemanticCompressor.compress(symbolsString, maxChars);
 
       const semanticAdvisory = `
 ### 🛡️ SEMANTIC_ARCHITECT_ADVISORY
@@ -49,8 +58,7 @@ The following project symbols were detected. Use this as a reference to ensure a
 \`\`\`text
 ${compressed}
 \`\`\`
-*Review references before refactoring any of these symbols.*
-`.trim();
+*Review references before refactoring any of these symbols.*`;
 
       // Audit Fix #5: Retornar el mensaje del sistema para inyección limpia.
       return {
@@ -61,7 +69,15 @@ ${compressed}
       };
       
     } catch (error) {
-      console.warn("[Omni-Pi] Salto de inyección semántica:", error);
+      if (error instanceof Error) {
+        if (error.message === 'Symbols timeout') {
+          console.warn("[Omni-Pi] Timeout al obtener símbolos");
+        } else {
+          console.warn("[Omni-Pi] Salto de inyección semántica:", error);
+        }
+      } else {
+        console.warn("[Omni-Pi] Error desconocido en inyección semántica:", error);
+      }
     }
   }
 }
