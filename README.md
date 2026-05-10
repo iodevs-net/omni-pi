@@ -68,3 +68,18 @@ bun run verify-omp.ts
 
 ---
 *Omni-Pi - Bridging the Semantic Gap · v5.0.0 · Abril 2026*
+
+---
+
+## 🗄️ ARCHIVED (2026-05-10)
+
+**Omni-Pi ha sido reemplazado por [blink-mcp](https://github.com/iodevs-net/blink-mcp).**
+
+Razones:
+- blink-mcp es MCP nativo → funciona con cualquier agente (Claude Code, Cursor, Gemini, Pi, DeepSeek TUI)
+- Análisis de código zero-LLM vs depender de Serena + llamadas LLM
+- No está atado a oh-my-pi ni a ningún framework de extensiones
+- 2419 líneas de Python portable vs 578 líneas de TypeScript atado a OMP
+
+Tag: `archive/v5.0.0`
+Rama: `archive/omni-pi-v5`
